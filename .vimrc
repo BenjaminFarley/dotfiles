@@ -17,6 +17,7 @@ Plugin 'hashivim/vim-hashicorp-tools'
 Plugin 'scrooloose/syntastic'
 Plugin 'vim-airline/vim-airline'
 Plugin 'tpope/vim-surround'
+Plugin 'fatih/vim-hclfmt'
 " " All of your Plugins must be added before the following line
 call vundle#end()            " required
 filetype plugin indent on    " required
@@ -42,6 +43,11 @@ if has("gui_macvim")
   set fuoptions=maxvert,maxhorz
   au GUIEnter * set fullscreen
 endif
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Everything else
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"Set Leader
+let mapleader=","
 
 "Resolution to lag issues
 set lazyredraw
@@ -125,7 +131,16 @@ map <leader>q gqip
 set listchars=tab:▸\ ,eol:¬
 map <leader>l :set list!<CR> " Toggle tabs and EOL
 
-
+set relativenumber
+set scrolloff=999
+nnoremap <C-U> 11kzz
+nnoremap <C-D> 11jzz
+nnoremap j jzz
+nnoremap k kzz
+nnoremap # #zz
+nnoremap * *zz
+nnoremap n nzz
+nnoremap N Nzz
 " Color scheme (terminal)
 set background=dark
 let g:solarized_termcolors=256
