@@ -2,25 +2,25 @@ set nocompatible              " be iMproved, required
 filetype off                  " required
 
 " set the runtime path to include Vundle and initialize
-set rtp+=~/.vim/bundle/Vundle.vim
-call vundle#begin()
+call plug#begin('~/.vim/plugged')
 " " alternatively, pass a path where Vundle should install plugins
 " "call vundle#begin('~/some/path/here')
 "
 " " let Vundle manage Vundle, required
-Plugin 'VundleVim/Vundle.vim'
-Plugin 'fatih/vim-go'
-Plugin 'AndrewRadev/splitjoin.vim'
-Plugin 'SirVer/ultisnips'
-Plugin 'altercation/vim-colors-solarized'
-Plugin 'rodjek/vim-puppet'
-Plugin 'ctrlpvim/ctrlp.vim'
-Plugin 'hashivim/vim-hashicorp-tools'
-Plugin 'scrooloose/syntastic'
-Plugin 'vim-airline/vim-airline'
-Plugin 'tpope/vim-surround'
-" " All of your Plugins must be added before the following line
-call vundle#end()            " required
+Plug 'VundleVim/Vundle.vim'
+Plug 'hashivim/vim-hashicorp-tools'
+Plug 'rodjek/vim-puppet'
+Plug 'scrooloose/syntastic'
+Plug 'tpope/vim-surround'
+Plug 'tpope/vim-fugitive'
+Plug 'vim-airline/vim-airline'
+Plug 'airblade/vim-gitgutter'
+Plug 'dracula/vim'
+Plug 'fatih/vim-go'
+Plug 'ctrlpvim/ctrlp.vim'
+
+call plug#end()
+
 filetype plugin indent on    " required
 
 """"""""""""""""""""""
@@ -29,14 +29,18 @@ filetype plugin indent on    " required
 set nocompatible                " Enables us Vim specific features
 filetype off                    " Reset filetype detection first ...
 filetype plugin indent on       " ... and enable filetype detection
-set ttyfast                     " Indicate fast terminal conn for faster redraw
-set ttymouse=xterm2             " Indicate terminal type for mouse codes
-set ttyscroll=3                 " Speedup scrolling
+
+if !has('nvim')
+  set ttyfast                     " Indicate fast terminal conn for faster redraw
+  set ttymouse=xterm2             " Indicate terminal type for mouse codes
+  set ttyscroll=3                 " Speedup scrolling
+endif
+
 set laststatus=2                " Show status line always
 set encoding=utf-8              " Set default encoding to UTF-8
 set autoread                    " Automatically read changed files
-set autoindent                  " Enabile Autoindent
 set backspace=indent,eol,start  " Makes backspace key more powerful.
+set clipboard=unnamed           " use os clipboard
 set incsearch                   " Shows the match while typing
 set hlsearch                    " Highlight found searches
 set noerrorbells                " No beeps
@@ -44,6 +48,9 @@ set number                      " Show line numbers
 set showcmd                     " Show me what I'm typing
 set noswapfile                  " Don't use swapfile
 set nobackup                    " Don't create annoying backup files
+set tabstop=2                   " number of visual spaces per tab
+set softtabstop=2               " number of spaces in tab when editing
+set expandtab                   " tab to spaces
 set splitright                  " Vertical windows should be split to right
 set splitbelow                  " Horizontal windows should split to bottom
 set autowrite                   " Automatically save before :next, :make etc.
@@ -58,13 +65,8 @@ set pumheight=10                " Completion window max size
 set nocursorcolumn              " Do not highlight column (speeds up highlighting)
 set nocursorline                " Do not highlight cursor (speeds up highlighting)
 set lazyredraw                  " Wait to redraw
-
-" Enable to copy to clipboard for operations like yank, delete, change and put
-" http://stackoverflow.com/questions/20186975/vim-mac-how-to-copy-to-clipboard-without-pbcopy
-if has('unnamedplus')
-  set clipboard^=unnamed
-  set clipboard^=unnamedplus
-endif
+set so=9999			" Try to always keep cursor in the middle of the screen.
+set updatetime=250
 
 " This enables us to undo files even if you exit Vim.
 if has('persistent_undo')
@@ -75,22 +77,16 @@ endif
 " Colorscheme
 syntax enable
 set t_Co=256
-let g:rehash256 = 1
-let g:solarized_termcolors=256
-let g:solarized_termtrans=1
-colorscheme solarized
+set background=dark
+set termguicolors
+colorscheme dracula
+
 """"""""""""""""""""""
 "      Mappings      "
 """"""""""""""""""""""
 
 " Set leader shortcut to a comma ','. By default it's the backslash
 let mapleader = ","
-
-" Jump to next error with Ctrl-n and previous error with Ctrl-m. Close the
-" quickfix window with <leader>a
-map <C-n> :cnext<CR>
-map <C-m> :cprevious<CR>
-nnoremap <leader>a :cclose<CR>
 
 " Visual linewise up and down by default (and use gj gk to go quicker)
 noremap <Up> gk
@@ -103,18 +99,29 @@ noremap k gk
 nnoremap n nzzzv
 nnoremap N Nzzzv
 
-" Act like D and C
-nnoremap Y y$
-
-" Enter automatically into the files directory
-autocmd BufEnter * silent! lcd %:p:h
-
+" Disabling the directional keys
+map <up> <nop>
+map <down> <nop>
+map <left> <nop>
+map <right> <nop>
+imap <up> <nop>
+imap <down> <nop>
+imap <left> <nop>
+imap <right> <nop>
 
 """""""""""""""""""""
 "      Plugins      "
 """""""""""""""""""""
+" Powerline
+let g:Powerline_symbols="fancy"
 
-" vim-go
+set guioptions-=R
+set guioptions-=L
+set guioptions-=r
+set guioptions-=l
+
+
+" GoLang
 let g:go_fmt_command = "goimports"
 let g:go_autodetect_gopath = 1
 let g:go_list_type = "quickfix"
@@ -169,14 +176,3 @@ augroup go
   autocmd Filetype go command! -bang AS call go#alternate#Switch(<bang>0, 'split')
   autocmd Filetype go command! -bang AT call go#alternate#Switch(<bang>0, 'tabe')
 augroup END
-
-" build_go_files is a custom function that builds or compiles the test file.
-" It calls :GoBuild if its a Go file, or :GoTestCompile if it's a test file
-function! s:build_go_files()
-  let l:file = expand('%')
-  if l:file =~# '^\f\+_test\.go$'
-    call go#cmd#Test(0, 1)
-  elseif l:file =~# '^\f\+\.go$'
-    call go#cmd#Build(0)
-  endif
-endfunction
